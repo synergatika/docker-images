@@ -11,3 +11,5 @@ apt-key adv --keyserver hkp://keyserver.ubuntu.com --recv 7568D9BB55FF9E5287D586
 
 apt-get update
 apt-get --assume-yes install pritunl
+
+chmod +x /bin/docker-entrypoint.sh

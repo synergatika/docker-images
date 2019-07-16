@@ -4,7 +4,7 @@ SCRIPT_VERSION="1.0.1"
 
 set -Eeuo pipefail
 
-if [ "${PRITUNL_DEBUG:-"false"}" == "true" ];
+if [ "$PRITUNL_DEBUG" == "true" ];
     then
         set -x
 fi
@@ -22,55 +22,37 @@ PRITUNL_OPTS="${PRITUNL_OPTS}"
 pritunl_setup() {
     log "INFO - Insuring pritunl setup for container"
 
-    ${PRITUNL} set-mongodb ${MONGODB_URI:-"mongodb://pritunldb:27017/pritunl"}
+    ${PRITUNL} set-mongodb ${MONGODB_URI:-"mongodb://mongo:27017/pritunl"}
 
     ${PRITUNL} set app.reverse_proxy false
     ${PRITUNL} set app.server_ssl true
     ${PRITUNL} set app.server_port 443
 
-    ${PRITUNL} setup-key
-    ${PRITUNL} default-password
-
     PRITUNL_OPTS="start ${PRITUNL_OPTS}"
 }
 
-exit_handler() {
-    log "INFO - Exit signal received, commencing shutdown"
-    pkill -15 -f ${PRITUNL}
-    for i in `seq 0 20`;
-        do
-            [ -z "$(pgrep -f ${PRITUNL})" ] && break
-            # kill it with fire if it hasn't stopped itself after 20 seconds
-            [ $i -gt 19 ] && pkill -9 -f ${PRITUNL} || true
-            sleep 1
-    done
-    log "INFO - Shutdown complete. Nothing more to see here. Have a nice day!"
-    log "INFO - Exit with status code ${?}"
-    exit ${?};
-}
-
-# Wait indefinitely on tail until killed
-idle_handler() {
-    while true
-    do
-        tail -f /dev/null & wait ${!}
-    done
-}
-
-trap 'kill ${!}; exit_handler' SIGHUP SIGINT SIGQUIT SIGTERM
-
-if [[ "${@}" == 'pritunl' ]];
-    then
-        pritunl_setup
-
-        log "EXEC - ${PRITUNL} ${PRITUNL_OPTS}"
-        exec 0<&-
-        exec ${PRITUNL} ${PRITUNL_OPTS} &
-        idle_handler
-    else
-        log "EXEC - ${@}"
-        exec "${@}"
+# allow changing bind addr
+if [ -z "$PRITUNL_BIND_ADDR" ]; then
+    PRITUNL_BIND_ADDR="0.0.0.0"
 fi
 
-# Script should never make it here, but just in case exit with a generic error code if it does
-exit 1;
+# if [ -z "$PRITUNL_DONT_WRITE_CONFIG" ]; then
+#     cat << EOF > /etc/pritunl.conf
+#     {
+#         "mongodb_uri": "$PRITUNL_MONGODB_URI",
+#         "server_key_path": "/var/lib/pritunl/pritunl.key",
+#         "log_path": "/var/log/pritunl.log",
+#         "static_cache": true,
+#         "server_cert_path": "/var/lib/pritunl/pritunl.crt",
+#         "temp_path": "/tmp/pritunl_%r",
+#         "bind_addr": "$PRITUNL_BIND_ADDR",
+#         "debug": $PRITUNL_DEBUG,
+#         "www_path": "/usr/share/pritunl/www",
+#         "local_address_interface": "auto"
+#     }
+# EOF
+
+# fi
+
+# exec /usr/bin/pritunl start -c /etc/pritunl.conf
+

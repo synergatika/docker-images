@@ -10,7 +10,7 @@ services:
       - ../db:/data/db
 
   pritunl:
-    image: docker-pritunl
+    image: synergatika/pritunl
     container_name: pritunl
     hostname: pritunl
     network_mode: bridge
@@ -22,10 +22,10 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
     ports:
-      - 88:80
-      - 444:443
-      - 1194:1194
-      - 1194:1194/udp
+      - 80
+      - 443
+      - 1194
+      - 1194/udp
     environment:
       - TZ=UTC
       - PRITUNL_DEBUG=true
