@@ -3,6 +3,7 @@ version: '3'
 services:
   mongo:
     image: synergatika/mongodb
+    restart: always
     container_name: pritunldb
     hostname: pritunldb
     network_mode: bridge
@@ -11,6 +12,7 @@ services:
 
   pritunl:
     image: synergatika/pritunl
+    restart: always
     container_name: pritunl
     hostname: pritunl
     network_mode: bridge
@@ -22,10 +24,10 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
     ports:
-      - 80
-      - 443
-      - 1194
-      - 1194/udp
+      - 80:80
+      - 443:443
+      - 1194:1194
+      - 1194:1194/udp
     environment:
       - TZ=UTC
       - PRITUNL_DEBUG=true
